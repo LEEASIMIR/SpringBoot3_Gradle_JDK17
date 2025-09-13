@@ -1,6 +1,6 @@
 package com.springboot.template.business.sample.data.database.entity;
 
-import com.springboot.template.global.data.database.entity.BaseEntity;
+import com.springboot.template.common.model.data.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
