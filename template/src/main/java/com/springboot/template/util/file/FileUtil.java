@@ -108,6 +108,10 @@ public class FileUtil extends FileHelper {
         String chunkFileName = "chunk";
 
         UploadMultipartFile tempUpload = new UploadMultipartFile(UPLOAD_BASE_DIR, tempPath, chunk);
+        UploadChunkFile chunkUpload = new UploadChunkFile(UPLOAD_BASE_DIR, tempPath, chunkFileName);
+
+        //처음이라면 Chunk 파일 모두 삭제
+        if(currentIndex == 0) chunkUpload.deleteFolder();
 
         // 청크 저장
         String savedChunkFilePath = tempUpload.save(chunkFileName + currentIndex);
@@ -116,11 +120,13 @@ public class FileUtil extends FileHelper {
         resultVO = tempUpload.getFileInfoVO(chunkFileName + currentIndex, savedChunkFilePath);
 
         // 모든 청크가 도착했는지 확인
-        if (currentIndex == lastIndex) {
+        long fileCnt = chunkUpload.getFileCnt(UPLOAD_BASE_DIR + tempPath);
+        log.info("lastIndex {} temp file cnt {}", lastIndex, fileCnt);
+        if (fileCnt == lastIndex) {
             // 모든 청크를 합쳐서 최종 파일 생성
-            UploadChunkFile chunkUpload = new UploadChunkFile(UPLOAD_BASE_DIR, tempPath, chunkFileName);
             String savedFilePath = chunkUpload.save(uploadPath + "/" + chunkUpload.getUUIDFileName(originFileName), lastIndex);
             resultVO = tempUpload.getFileInfoVO(originFileName, savedFilePath);
+            chunkUpload.deleteFolder();
         }
 
         return resultVO;

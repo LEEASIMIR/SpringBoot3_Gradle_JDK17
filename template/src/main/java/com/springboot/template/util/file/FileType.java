@@ -51,6 +51,7 @@ public enum FileType {
 
     JSON("json", "application/json", Collections.emptyList()),
     XML("xml", "application/xml", Collections.emptyList()),
+    EXE("exe", "application/x-msdownload", Collections.emptyList()),
 
     IMAGE("IMAGE", "file/image", List.of(JPG, JPEG, PNG, GIF)),
     DOCUMENT("DOCUMENT", "file/document", List.of(PDF, DOC, DOCX, XLS,  XLSX, PPT, PPTX,  TXT, CSV)),

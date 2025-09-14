@@ -38,67 +38,109 @@
     const fileInput = document.getElementById('fileInput');
     const progressBar = document.getElementById('progressBar');
     const progressText = document.getElementById('progressText');
+    let progressSuccessCnt = 0;
+    let progressLastCnt = 0;
+    let lastIndex = 0;
 
-    let failIndex = 0;
+    function startUpload() {
+        progressSuccessCnt = 0;
+        setProgress();
 
-    async function startUpload() {
         const file = fileInput.files[0];
         if (!file) {
             alert('파일을 선택해주세요.');
             return;
         }
 
-        const lastIndex = Math.ceil(file.size / chunkSize) - 1;
-        let currentIndex = failIndex > 0 ? failIndex : 0;
+        lastIndex = Math.ceil(file.size / chunkSize) - 1;
+        progressLastCnt = lastIndex + 1;
 
         // 로딩 시작
         progressBar.style.width = '0%';
         progressBar.textContent = '0%';
         progressText.textContent = '0%';
 
-        while (currentIndex <= lastIndex) {
-            const start = currentIndex * chunkSize;
+        let formFirst = null;
+        let formList = [];
+        let formLast = null;
+
+        for(let i=0;i<lastIndex;i++) {
+            const start = i * chunkSize;
             const end = Math.min(start + chunkSize, file.size);
             const chunk = file.slice(start, end);
 
             const formData = new FormData();
             formData.append('file', chunk);
             formData.append('fileName', file.name);
-            formData.append('currentIndex', currentIndex);
+            formData.append('currentIndex', i);
             formData.append('lastIndex', lastIndex);
 
-            try {
-                const response = await fetch('/chunk-upload', {
-                    method: 'POST',
-                    body: formData,
-                });
+            //const promise = fetch('/chunk-upload', {method: 'POST', body: formData})
 
-                if (!response.ok) {
-                    failIndex = currentIndex;
-                }
-
-                const result = await response.json();
-                console.log("result", result);
-                if (result.status === 200) {
-                    currentIndex++;
-                    const percentage = Math.ceil((currentIndex / (lastIndex+1)) * 100);
-
-                    // 프로그레스 바와 텍스트 업데이트
-                    progressBar.style.width = `${percentage}%`;
-                    progressBar.textContent = `${percentage}%`;
-                    progressText.textContent = `${percentage}%`;
-                }
-
-                console.log("currentIndex", currentIndex, "lastIndex", lastIndex);
-            } catch (error) {
-                failIndex = currentIndex;
-                console.error('업로드 중 오류 발생:', error);
-                alert('업로드 실패');
-                return;
+            if(i === 0) formFirst = formData;
+            else if(i === lastIndex-1) {
+                formLast = formData;
+            } else {
+                formList.push(formData);
             }
         }
 
-        alert('업로드 완료!');
+        requestUploads(formFirst, formList, formLast).then(res => {});
+    }
+
+    async function requestUploads(formFirst, formList, formLast) {
+        // 모든 Promise가 완료될 때까지 기다립니다.
+        try {
+            console.log("chunkPromiseFirst");
+            const first = await fetch('/chunk-upload', {method: 'POST', body: formFirst});
+            const firstJson = await first.json();
+            console.log("chunkPromiseFirst res", firstJson);
+            progressSuccessCnt++;
+            setProgress();
+
+            console.log("chunkPromises");
+            const requests = formList.map(form => fetch('/chunk-upload', {method: 'POST', body: form}).finally(() => {
+                progressSuccessCnt++;
+                setProgress();
+            }));
+            // 모든 fetch 요청을 병렬로 보냄
+            const responses = await Promise.all(requests);
+
+            // 각 응답이 성공적인지 확인하고, json() 파싱 프로미스를 생성
+            const jsonPromises = responses.map(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            });
+            // 모든 json() 파싱을 병렬로 실행
+            const centerJson = await Promise.all(jsonPromises);
+            console.log("chunkPromises res", centerJson);
+
+            console.log("chunkPromiseLast");
+            const last = await fetch('/chunk-upload', {method: 'POST', body: formLast});
+            const lastJson = await last.json();
+            console.log("chunkPromiseLast res", lastJson);
+
+            progressSuccessCnt = progressLastCnt;
+            setProgress();
+
+        } catch (error) {
+            console.error('병렬 업로드 중 오류 발생:', error);
+            alert('업로드 실패');
+        }
+    }
+
+    function setProgress() {
+        console.log("progressSuccessCnt", progressSuccessCnt, "progressLastCnt", progressLastCnt);
+        const per = Math.ceil(Math.min((progressSuccessCnt / progressLastCnt) * 1000, 1000)) / 10;
+        let text = `${per}%`;
+        if(per === 100) {
+            text = '완료';
+        }
+        progressBar.style.width = `${per}%`;
+        progressBar.textContent = text;
+        progressText.textContent = text;
     }
 </script>
 

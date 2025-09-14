@@ -59,20 +59,21 @@ public class FileValid {
 
         //문자열 (예: "10KB", "5MB", "1GB")
         Matcher matcher = pattern.matcher(fileSizeStr.trim().toUpperCase());
-        if (!matcher.matches()) {
-            return getFileSizeByte("5MB");
+
+        if(matcher.matches()) {
+            return 5 * 1024 * 1024;
+        } else {
+            long value = Long.parseLong(matcher.group(1));
+            String unit = matcher.group(2);
+
+            return switch (unit) {
+                case "KB" -> value * 1024;
+                case "MB" -> value * 1024 * 1024;
+                case "GB" -> value * 1024 * 1024 * 1024;
+                case "TB" -> value * 1024L * 1024 * 1024 * 1024;
+                default -> 5 * 1024 * 1024;
+            };
         }
-
-        long value = Long.parseLong(matcher.group(1));
-        String unit = matcher.group(2);
-
-        return switch (unit) {
-            case "KB" -> value * 1024;
-            case "MB" -> value * 1024 * 1024;
-            case "GB" -> value * 1024 * 1024 * 1024;
-            case "TB" -> value * 1024L * 1024 * 1024 * 1024;
-            default -> 5 * 1024 * 1024;
-        };
     }
 
 }

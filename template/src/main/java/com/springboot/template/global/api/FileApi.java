@@ -24,7 +24,7 @@ public class FileApi {
 
     @PostMapping(value = "/file-upload", consumes = "multipart/form-data")
     public ApiResponseEntity<FileInfoVO> fileUpload(@Validated @RequestPart MultipartFile file) throws Exception {
-        FileInfoVO result = this.fileUtil.uploadFile("10MB", "/data", file, FileType.IMAGE);
+        FileInfoVO result = this.fileUtil.uploadFile("10MB", "/data", file, FileType.EXE);
         return ApiResponseEntity.ok(result);
     }
 

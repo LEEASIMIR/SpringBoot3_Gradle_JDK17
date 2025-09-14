@@ -3,12 +3,14 @@ package com.springboot.template.util.file.upload;
 import com.springboot.template.common.exception.MessageException;
 import com.springboot.template.util.file.FileType;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 
+@Slf4j
 @Getter
 public class UploadMultipartFile extends FileHelper {
 
@@ -23,7 +25,7 @@ public class UploadMultipartFile extends FileHelper {
     public UploadMultipartFile(String UPLOAD_BASE_DIR, String physicsFilePath, MultipartFile file) {
         this.UPLOAD_BASE_DIR = UPLOAD_BASE_DIR;
         this.file = file;
-        this.fileName = this.file.getName();
+        this.fileName = this.file.getOriginalFilename();
         this.sizeByte = file.getSize();
         this.fileType = FileType.findByExtensionAndMimeType(super.getExtension(this.fileName), super.getContentType(this.file));
         this.physicsFilePath = this.UPLOAD_BASE_DIR+physicsFilePath;
@@ -47,6 +49,7 @@ public class UploadMultipartFile extends FileHelper {
     }
 
     public String getExtension() {
+        log.info("getExtension {}", fileName);
         return super.getExtension(this.fileName);
     }
 

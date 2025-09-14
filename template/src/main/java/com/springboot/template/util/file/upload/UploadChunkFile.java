@@ -11,6 +11,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Stream;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -26,8 +27,10 @@ public class UploadChunkFile extends FileHelper {
         String resultPath = "";
         File file = super.getFile(UPLOAD_BASE_DIR + uploadFilePath);
 
+        int index = 0;
         try (FileOutputStream finalFos = new FileOutputStream(file)) {
-            for (int i = 0; i <= lastIndex; i++) {
+            for (int i = 0; i < lastIndex; i++) {
+                index = i;
 //                File chunkFile = new File(UPLOAD_BASE_DIR+chunkFileDir, chunkFileName+i);
 //
 //                //방법1 1988ms
@@ -44,7 +47,6 @@ public class UploadChunkFile extends FileHelper {
                         finalFos.write(buffer, 0, bytesRead);
                     }
                 }
-                chunkFile.delete();
 
 //                //방법3 1857ms
 //                Path chunkPath = Paths.get(UPLOAD_BASE_DIR, chunkFileDir, chunkFileName + i);
@@ -53,14 +55,49 @@ public class UploadChunkFile extends FileHelper {
 //                // 복사 후 원본 파일 삭제
 //                Files.delete(chunkPath);
             }
-            Files.deleteIfExists(Path.of(UPLOAD_BASE_DIR+chunkFileDir));
             resultPath = UPLOAD_BASE_DIR + uploadFilePath;
         } catch (FileNotFoundException e) {
-            throw new MessageException("exception.download.not.found", new  String[]{chunkFileDir + "/" + chunkFileName});
+            throw new MessageException("exception.download.not.found", new  String[]{chunkFileDir + "/" + chunkFileName+index});
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
         return resultPath;
+    }
+
+    public long getFileCnt(String dirPath) {
+        Path startPath = Paths.get(dirPath);
+        long fileCount = 0L;
+        try (Stream<Path> stream = Files.walk(startPath)) {
+            fileCount = stream.filter(Files::isRegularFile).count();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return fileCount;
+    }
+
+    public void deleteFolder() {
+        this.deleteFolder(new File(UPLOAD_BASE_DIR+chunkFileDir));
+    }
+
+    private void deleteFolder(File folder) {
+
+        // 폴더 내 모든 파일/폴더를 배열로 가져옴
+        File[] files = folder.listFiles();
+
+        if (files != null) {
+            // 배열을 순회하며 삭제
+            for (File file : files) {
+                // 파일이면 삭제
+                if (file.isFile()) {
+                    file.delete();
+                } else {
+                    // 폴더면 재귀 호출
+                    deleteFolder(file);
+                }
+            }
+        }
+        // 폴더 내부가 모두 비워지면 폴더 자체를 삭제
+        folder.delete();
     }
 }
