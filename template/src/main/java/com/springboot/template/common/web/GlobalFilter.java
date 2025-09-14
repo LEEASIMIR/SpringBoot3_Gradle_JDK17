@@ -2,6 +2,7 @@ package com.springboot.template.common.web;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 
@@ -22,7 +23,7 @@ public class GlobalFilter implements Filter {
      */
     @Override
     public void init(jakarta.servlet.FilterConfig filterConfig) throws ServletException {
-        log.info("GlobalFilter.init");
+        log.debug("GlobalFilter.init");
     }
 
     /**
@@ -32,13 +33,13 @@ public class GlobalFilter implements Filter {
      */
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        log.info("GlobalFilter.doFilter start");
+        log.debug("GlobalFilter.doFilter start");
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         MDC.put("sessionId", request.getSession().getId());
-        log.info(request.getRequestURI());
+        log.debug(request.getRequestURI());
         filterChain.doFilter(servletRequest, servletResponse);
         MDC.clear();
-        log.info("GlobalFilter.doFilter end");
+        log.debug("GlobalFilter.doFilter end");
     }
 
     /**
@@ -49,6 +50,6 @@ public class GlobalFilter implements Filter {
     @Override
     public void destroy() {
         //애플리케이션 종료 시
-        log.info("GlobalFilter.destroy");
+        log.debug("GlobalFilter.destroy");
     }
 }

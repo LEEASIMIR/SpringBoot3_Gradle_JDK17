@@ -34,12 +34,12 @@ public class AopRestApiMonitoring {
 
     @Before("com.springboot.template.common.web.AopPointcut.restController()")
     public void beforeApi(JoinPoint joinPoint) throws Throwable {
-        log.info("AopRestApiMonitoring.beforeApi()");
+        log.debug("AopRestApiMonitoring.beforeApi()");
     }
 
     @After("com.springboot.template.common.web.AopPointcut.restController()")
     public void afterApi(JoinPoint joinPoint) {
-        log.info("AopRestApiMonitoring.afterApi()");
+        log.debug("AopRestApiMonitoring.afterApi()");
     }
 
     @Around("com.springboot.template.common.web.AopPointcut.restController()")

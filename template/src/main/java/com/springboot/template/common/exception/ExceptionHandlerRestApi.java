@@ -3,6 +3,7 @@ package com.springboot.template.common.exception;
 import com.springboot.template.common.model.ApiResponseEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.http.fileupload.impl.SizeLimitExceededException;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -10,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
  * API, @RestController 대상 Exception 핸들러
@@ -27,6 +29,7 @@ public class ExceptionHandlerRestApi {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ApiResponseEntity<String> handleException(Exception e) {
+        log.error(e.getMessage(), e);
         return ApiResponseEntity.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), "UNKNOWN ERROR");
     }
 

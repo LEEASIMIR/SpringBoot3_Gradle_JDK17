@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class FilterConfig {
+
     @Bean
     public FilterRegistrationBean<GlobalFilter> globalFilter() {
         FilterRegistrationBean<GlobalFilter> registrationBean = new FilterRegistrationBean<>();

@@ -1,18 +1,19 @@
 package com.springboot.template.util.file;
 
+import com.springboot.template.common.exception.MessageException;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 파일 타입 종류 정의
@@ -24,62 +25,44 @@ import java.util.List;
 @AllArgsConstructor
 public enum FileType {
 
-    //이미지
-    UNKNOWN("unknown", "application/octet-stream"),
-    JPG("jpg", "image/jpeg"),
-    JPEG("jpeg", "image/jpeg"),
-    PNG("png", "image/png"),
-    GIF("gif", "image/gif"),
+    UNKNOWN("unknown", "unknown", Collections.emptyList()),
 
-    //영상
-    MP4("mp4", "video/mp4"),
-    AVI("avi", "video/x-msvideo"),
-    MOV("mov", "video/quicktime"),
-    WMV("wmv", "video/x-ms-wmv"),
-    MKV("mkv", "video/x-matroska"),
-    WEBM("webm", "video/webm"),
+    JPG("jpg", "image/jpeg", Collections.emptyList()),
+    JPEG("jpeg", "image/jpeg", Collections.emptyList()),
+    PNG("png", "image/png", Collections.emptyList()),
+    GIF("gif", "image/gif", Collections.emptyList()),
 
-    // 문서
-    PDF("pdf", "application/pdf"),
-    DOC("doc", "application/msword"),
-    DOCX("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
-    XLS("xls", "application/vnd.ms-excel"),
-    XLSX("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
-    PPT("ppt", "application/vnd.ms-powerpoint"),
-    PPTX("pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"),
-    TXT("txt", "text/plain"),
-    CSV("csv", "text/csv"),
-    JSON("json", "application/json"),
-    XML("xml", "application/xml");
+    MP4("mp4", "video/mp4", Collections.emptyList()),
+    AVI("avi", "video/x-msvideo", Collections.emptyList()),
+    MOV("mov", "video/quicktime", Collections.emptyList()),
+    WMV("wmv", "video/x-ms-wmv", Collections.emptyList()),
+    MKV("mkv", "video/x-matroska", Collections.emptyList()),
+    WEBM("webm", "video/webm", Collections.emptyList()),
+
+    PDF("pdf", "application/pdf", Collections.emptyList()),
+    DOC("doc", "application/msword", Collections.emptyList()),
+    DOCX("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", Collections.emptyList()),
+    XLS("xls", "application/vnd.ms-excel", Collections.emptyList()),
+    XLSX("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Collections.emptyList()),
+    PPT("ppt", "application/vnd.ms-powerpoint", Collections.emptyList()),
+    PPTX("pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation", Collections.emptyList()),
+    TXT("txt", "text/plain", Collections.emptyList()),
+    CSV("csv", "text/csv", Collections.emptyList()),
+
+    JSON("json", "application/json", Collections.emptyList()),
+    XML("xml", "application/xml", Collections.emptyList()),
+
+    IMAGE("IMAGE", "file/image", List.of(JPG, JPEG, PNG, GIF)),
+    DOCUMENT("DOCUMENT", "file/document", List.of(PDF, DOC, DOCX, XLS,  XLSX, PPT, PPTX,  TXT, CSV)),
+    DATA("DATA", "DATA", List.of(JSON, XML)),
+    VIDEO("VIDEO", "file/video", List.of(MP4, AVI, MOV, WMV, MKV, WEBM));
 
     private final String extension;
     private final String contentType;
-
-    public static FileType getFileTypeByMultipartFile(MultipartFile file, boolean hardCheck) {
-        String contentType = FileType.getContentType(file);
-        String extension = FileType.getExtension(file);
-        if(hardCheck) {
-            return FileType.findByExtensionAndMimeType(extension, contentType);
-        } else {
-            return FileType.findByExtension(extension);
-        }
-    }
-
-    public static String getExtension(MultipartFile file) {
-        String extension = "";
-        String originalFilename = file.getOriginalFilename();
-        if (originalFilename != null && originalFilename.lastIndexOf(".") != -1) {
-            extension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1);
-        }
-        return extension;
-    }
-
-    public static String getContentType(MultipartFile file) {
-        return file.getContentType();
-    }
+    private final List<FileType> subTypes;
 
     //하드 체크, 둘다 만족
-    private static FileType findByExtensionAndMimeType(String fileExtension, String fileContentType) {
+    public static FileType findByExtensionAndMimeType(@NotNull String fileExtension, @NotNull String fileContentType) {
         return Arrays.stream(FileType.values())
                 .filter(type -> type.getExtension().equalsIgnoreCase(fileExtension) &&
                         type.getContentType().equalsIgnoreCase(fileContentType))
@@ -88,21 +71,10 @@ public enum FileType {
     }
 
     //확장자만 체크
-    private static FileType findByExtension(String fileExtension) {
+    public static FileType findByExtension(@NotNull String fileExtension) {
         return Arrays.stream(FileType.values())
                 .filter(type -> type.getExtension().equalsIgnoreCase(fileExtension))
                 .findFirst()
                 .orElse(FileType.UNKNOWN);
-    }
-
-    //File 객체에 ContentType을 비교적 정확하게 가져오는 메서드
-    private static String getContentTypeWithTika(File file) {
-        Tika tika = new Tika();
-        try {
-            return tika.detect(file);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "";
-        }
     }
 }

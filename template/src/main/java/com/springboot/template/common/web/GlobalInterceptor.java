@@ -11,17 +11,17 @@ public class GlobalInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        log.info("GlobalInterceptor.preHandle");
+        log.debug("GlobalInterceptor.preHandle");
         return true;
     }
 
     @Override
     public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
-        log.info("GlobalInterceptor.postHandle");
+        log.debug("GlobalInterceptor.postHandle");
     }
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
-        log.info("GlobalInterceptor.afterCompletion");
+        log.debug("GlobalInterceptor.afterCompletion");
     }
 }

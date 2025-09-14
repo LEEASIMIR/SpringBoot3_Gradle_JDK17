@@ -1,32 +1,36 @@
 package com.springboot.template.common.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 
 import java.util.Objects;
 
 @Getter
 @Setter
-@NoArgsConstructor
 public class ApiResponseEntity<T> {
-    private int code;
+
+    private int status;
     private String message;
     private T body;
 
     public static <T> ApiResponseEntity<T> ok(T body) {
         ApiResponseEntity<T> response = new ApiResponseEntity<>();
-        response.setCode(200);
+        response.setStatus(200);
         response.setMessage("SUCCESS");
-        response.setBody(Objects.requireNonNull(body, ""));
+        response.setBody(body);
         return response;
     }
 
     public static <T> ApiResponseEntity<T> error(int code, String message, T body) {
         ApiResponseEntity<T> response = new ApiResponseEntity<>();
-        response.setCode(code);
+        response.setStatus(code);
         response.setMessage(message);
-        response.setBody(Objects.requireNonNull(body, ""));
+        response.setBody(body);
         return response;
     }
 }
