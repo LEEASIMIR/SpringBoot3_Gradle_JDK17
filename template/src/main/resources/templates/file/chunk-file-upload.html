@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <script src="/assets/js/date.js"></script>
     <title>Chunk Upload Example</title>
     <style>
         #progressBar {
@@ -61,21 +62,21 @@
         progressText.textContent = '0%';
 
         try {
+            let tempDirName = new CustomDate().format('yyyyMMddHHmmssSSS');
             for(let currentIndex=0;currentIndex < totalChunkCnt;currentIndex++) {
                 const start = currentIndex * chunkSize;
                 const end = Math.min(start + chunkSize, file.size);
                 const chunk = file.slice(start, end);
 
                 const formData = new FormData();
-                formData.append('file', chunk);
-                formData.append('fileName', file.name);
+                formData.append('chunk', chunk);
+                formData.append('uniqueTempDirName', tempDirName);
+                formData.append('originFileName', file.name);
                 formData.append('currentIndex', currentIndex);
                 formData.append('totalChunkCnt', totalChunkCnt);
 
                 const response = await fetch('/chunk-upload', {method: 'POST', body: formData})
                 const json = await response.json();
-
-                console.log(json)
 
                 if(json.status !== 200) {
                     throw new Error(json.message);

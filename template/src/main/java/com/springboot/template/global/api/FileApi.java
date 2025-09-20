@@ -3,9 +3,9 @@ package com.springboot.template.global.api;
 import com.springboot.template.common.exception.MessageException;
 import com.springboot.template.common.model.ApiResponseEntity;
 import com.springboot.template.util.file.*;
-import com.springboot.template.util.file.dto.FileDownloadReqDto;
-import com.springboot.template.util.file.dto.FileTypeResDto;
-import com.springboot.template.util.file.upload.FileInfoVO;
+import com.springboot.template.util.file.base.FileType;
+import com.springboot.template.util.file.dto.UploadChunkDto;
+import com.springboot.template.util.file.vo.UploadFileInfoVO;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,33 +23,24 @@ public class FileApi {
     private final FileUtil fileUtil;
 
     @PostMapping(value = "/file-upload", consumes = "multipart/form-data")
-    public ApiResponseEntity<FileInfoVO> fileUpload(@Validated @RequestPart MultipartFile file) throws Exception {
-        FileInfoVO result = this.fileUtil.uploadFile("10MB", "/data", file, FileType.EXE);
+    public ApiResponseEntity<UploadFileInfoVO> fileUpload(@Validated @RequestPart MultipartFile file) throws Exception {
+        UploadFileInfoVO result = this.fileUtil.uploadFile("10MB", "/data", file, FileType.EXE);
         return ApiResponseEntity.ok(result);
     }
 
     @GetMapping(value = "/file-download")
-    public void fileDownload(HttpServletResponse response, @RequestBody FileDownloadReqDto fileDownloadDto) throws Exception {
-//        FileHelper fileHelper = new FileHelper();
-//        FileInfoVO fileInfoVO = fileHelper.getFileInfoVO(fileDownloadDto.getReturnFileName(), fileDownloadDto.getFilePath());
-//        this.fileUtil.download(response, fileInfoVO);
+    public void fileDownload(HttpServletResponse response, @RequestParam("returnFileName") String returnFileName, @RequestParam("filePath") String filePath) throws Exception {
+        this.fileUtil.download(response, returnFileName, filePath);
     }
 
     @GetMapping(value = "/get-file-type")
-    public ApiResponseEntity<FileTypeResDto> getFileType(@RequestParam("fileName") String fileName, @RequestParam("contentType") String contentType) throws Exception {
-        FileTypeResDto dto = new FileTypeResDto();
-        dto.setFileType(FileType.findByExtensionAndMimeType(fileName, contentType));
-
-        return ApiResponseEntity.ok(dto);
+    public ApiResponseEntity<FileType> getFileType(@RequestParam("fileName") String fileName, @RequestParam("contentType") String contentType) throws Exception {
+        return ApiResponseEntity.ok(FileType.findByExtensionAndMimeType(fileName, contentType));
     }
 
     @PostMapping("/chunk-upload")
-    public ApiResponseEntity<FileInfoVO> handleChunkUpload(
-            @RequestParam("file") MultipartFile chunk,
-            @RequestParam("fileName") String fileName,
-            @RequestParam("currentIndex") int currentIndex,
-            @RequestParam("totalChunkCnt") int totalChunkCnt) throws IOException, MessageException {
-        FileInfoVO result = fileUtil.chunkUpload(chunk, "/data", fileName, currentIndex, totalChunkCnt);
+    public ApiResponseEntity<UploadFileInfoVO> handleChunkUpload(@ModelAttribute UploadChunkDto dto) throws IOException, MessageException {
+        UploadFileInfoVO result = fileUtil.chunkUpload(dto, "/data");
 
         return ApiResponseEntity.ok(result);
     }

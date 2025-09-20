@@ -1,19 +1,14 @@
-package com.springboot.template.util.file;
+package com.springboot.template.util.file.base;
 
-import com.springboot.template.common.exception.MessageException;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tika.Tika;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 파일 타입 종류 정의
@@ -61,6 +56,18 @@ public enum FileType {
     private final String extension;
     private final String contentType;
     private final List<FileType> subTypes;
+
+    public static FileType findByExtensionAndMimeType(MultipartFile file) {
+        return findByExtensionAndMimeType(getExtension(file.getOriginalFilename()), file.getContentType());
+    }
+
+    private static String getExtension(String fileName) {
+        String extension = "";
+        if (fileName.lastIndexOf(".") != -1) {
+            extension = fileName.substring(fileName.lastIndexOf(".") + 1);
+        }
+        return extension;
+    }
 
     //하드 체크, 둘다 만족
     public static FileType findByExtensionAndMimeType(@NotNull String fileExtension, @NotNull String fileContentType) {

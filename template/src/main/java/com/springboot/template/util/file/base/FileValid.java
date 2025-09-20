@@ -1,4 +1,4 @@
-package com.springboot.template.util.file;
+package com.springboot.template.util.file.base;
 
 import java.util.Arrays;
 import java.util.regex.Matcher;
@@ -53,7 +53,7 @@ public class FileValid {
      * @return 바이트 단위의 long 값
      * @throws IllegalArgumentException 유효하지 않은 형식일 경우 발생
      */
-    public static long getFileSizeByte(String fileSizeStr) {
+    private static long getFileSizeByte(String fileSizeStr) {
 
         Pattern pattern = Pattern.compile("(\\d+)([KMGT]B)");
 
