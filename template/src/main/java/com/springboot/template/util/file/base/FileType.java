@@ -4,8 +4,11 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tika.Tika;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -15,6 +18,7 @@ import java.util.List;
  * @author 이봉용
  * @date 25. 9. 13.
  */
+@Slf4j
 public enum FileType {
 
     UNKNOWN("unknown", "unknown", Collections.emptyList()),
@@ -44,6 +48,7 @@ public enum FileType {
     JSON("json", "application/json", Collections.emptyList()),
     XML("xml", "application/xml", Collections.emptyList()),
     EXE("exe", "application/x-msdownload", Collections.emptyList()),
+    DOSEXEC("exe", "application/x-dosexec", Collections.emptyList()),
 
     IMAGE("IMAGE", "file/image", List.of(JPG, JPEG, PNG, GIF)),
     DOCUMENT("DOCUMENT", "file/document", List.of(PDF, DOC, DOCX, XLS,  XLSX, PPT, PPTX,  TXT, CSV)),
@@ -60,11 +65,15 @@ public enum FileType {
         this.subTypes = subTypes;
     }
 
+    public static FileType[] ALL() {
+        return FileType.values();
+    }
+
     public static FileType findByExtensionAndMimeType(MultipartFile file) {
         return findByExtensionAndMimeType(getExtension(file.getOriginalFilename()), file.getContentType());
     }
 
-    private static String getExtension(String fileName) {
+    public static String getExtension(String fileName) {
         String extension = "";
         if (fileName.lastIndexOf(".") != -1) {
             extension = fileName.substring(fileName.lastIndexOf(".") + 1);
@@ -72,11 +81,25 @@ public enum FileType {
         return extension;
     }
 
+    public static String getContentType(File file) {
+        Tika tika = new Tika();
+        try {
+            return tika.detect(file);
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+            return "";
+        }
+    }
+
+    public static FileType findByFileNameAndMimeType(String fileName, String fileContentType) {
+        return findByExtensionAndMimeType(getExtension(fileName), fileContentType);
+    }
+
     //하드 체크, 둘다 만족
     public static FileType findByExtensionAndMimeType(@NotNull String fileExtension, @NotNull String fileContentType) {
         return Arrays.stream(FileType.values())
                 .filter(type -> type.getExtension().equalsIgnoreCase(fileExtension) &&
-                        type.getContentType().equalsIgnoreCase(fileContentType))
+                        type.getContentType().equalsIgnoreCase(fileContentType.split(";")[0]))
                 .findFirst()
                 .orElse(FileType.UNKNOWN);
     }

@@ -1,10 +1,35 @@
 package com.springboot.template.util.file.base;
 
+import com.springboot.template.util.file.dto.UploadValidDto;
+import com.springboot.template.util.file.exception.NotAllowPathException;
+import com.springboot.template.util.file.exception.NotAllowSizeException;
+import com.springboot.template.util.file.exception.NotAllowTypeException;
+
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class FileValid {
+
+    public static void valid(UploadValidDto dto, String maxFileSize, FileType... allowFileType) throws NotAllowPathException, NotAllowTypeException, NotAllowSizeException {
+
+        FileType fileTypeObj = FileType.findByFileNameAndMimeType(dto.getFileName(), dto.getFileType());
+
+        //경로 취약점 체크
+        if(!FileValid.isAllowPath(dto.getUploadPath())) {
+            throw new NotAllowPathException(dto.getUploadPath());
+        }
+
+        //파일 타입 체크
+        if(!FileValid.isAllowContentType(fileTypeObj, allowFileType)) {
+            throw new NotAllowTypeException(FileType.getExtension(dto.getFileName()) + ", " +dto.getFileType());
+        }
+
+        //파일 용량 체크
+        if(!FileValid.isAllowSize(dto.getFileSize(), maxFileSize)) {
+            throw new NotAllowSizeException(dto.getFileSize() + ", " + maxFileSize);
+        }
+    }
 
     /**
      * @param targetFileType 체크할 대상 {@link FileType}
@@ -38,42 +63,12 @@ public class FileValid {
     /**
      * 용량 제한
      * 예: "5MB" -> 5242880L
-     * @param fileSizeStr "5KB" , "5MB" , "5GB"
+     * @param maxFileSizeStr "5KB" , "5MB" , "5GB"
      * @return 바이트 단위의 long 값
      * @throws IllegalArgumentException 유효하지 않은 형식일 경우 발생
      */
-    public static boolean isAllowSize(long targetFileSize, String fileSizeStr) {
-        return targetFileSize > getFileSizeByte(fileSizeStr);
-    }
-
-    /**
-     * 문자열 데이터 크기를 바이트(long)로 변환합니다.
-     * 예: "5MB" -> 5242880L
-     * @param fileSizeStr "5KB" , "5MB" , "5GB"
-     * @return 바이트 단위의 long 값
-     * @throws IllegalArgumentException 유효하지 않은 형식일 경우 발생
-     */
-    private static long getFileSizeByte(String fileSizeStr) {
-
-        Pattern pattern = Pattern.compile("(\\d+)([KMGT]B)");
-
-        //문자열 (예: "10KB", "5MB", "1GB")
-        Matcher matcher = pattern.matcher(fileSizeStr.trim().toUpperCase());
-
-        if(matcher.matches()) {
-            return 5 * 1024 * 1024;
-        } else {
-            long value = Long.parseLong(matcher.group(1));
-            String unit = matcher.group(2);
-
-            return switch (unit) {
-                case "KB" -> value * 1024;
-                case "MB" -> value * 1024 * 1024;
-                case "GB" -> value * 1024 * 1024 * 1024;
-                case "TB" -> value * 1024L * 1024 * 1024 * 1024;
-                default -> 5 * 1024 * 1024;
-            };
-        }
+    public static boolean isAllowSize(long targetFileSize, String maxFileSizeStr) {
+        return FileHelper.getFileSizeByte(maxFileSizeStr) > targetFileSize;
     }
 
 }

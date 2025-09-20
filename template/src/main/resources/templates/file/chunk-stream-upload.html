@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="/assets/js/date.js"></script>
+    <script src="/assets/js/file.js"></script>
+    <title>Chunk Upload Example</title>
+    <style>
+        #progressBar {
+            width: 0%;
+            height: 20px;
+            background-color: #4CAF50;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+            border-radius: 5px;
+            transition: width 0.3s; /* 부드러운 전환 효과 */
+        }
+        #progressContainer {
+            width: 100%;
+            background-color: #f3f3f3;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>스트림 파일 업로드</h1>
+<input type="file" id="fileInput">
+<button type="button" onclick="startUpload()">업로드 시작</button>
+<button id="downloadBtn" type="button" style="display: none;" onclick="download(this)" data-path="" data-filename="">다운로드</button>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+
+    function download(el) {
+        const fileName = el.getAttribute("data-filename");
+        const filePath = el.getAttribute("data-path");
+        const params = new URLSearchParams({returnFileName: fileName, filePath: filePath});
+
+        const link = document.createElement('a');
+        link.href = `/file-download?${params.toString()}`;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    async function startUpload() {
+        const file = fileInput.files[0];
+
+        const chunkSize = 5 * 1024 * 1024; // 5MB 청크 크기 (예시)
+        const totalChunks = Math.ceil(file.size / chunkSize);
+
+        // 1. 세션 시작 (서버는 이 요청에 대한 응답으로 세션 URI를 반환)
+        const sessionResponse = await fetch('/start-chunk-upload', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ fileName: file.name, fileSize: file.size })
+        });
+
+        if (!sessionResponse.ok) {
+            throw new Error('세션 시작 실패');
+        }
+
+        // 서버 응답 헤더에서 세션 URI를 가져옵니다.
+        // 구글 드라이브 API는 Location 헤더를 사용하지만, 여기서는 예시를 위해 JSON 본문을 가정합니다.
+        const sessionData = await sessionResponse.json();
+        const uploadUrl = sessionData.body.sessionUrl;
+
+        if (!uploadUrl) {
+            throw new Error('세션 URI를 받지 못했습니다.');
+        }
+
+        let currentChunk = 0;
+        let uploadedBytes = 0;
+
+        // 스트림 방식----------------------
+        // 2. 파일을 스트림으로 변환하여 단일 요청으로 전송
+        const stream = new ReadableStream({
+            async start(controller) {
+                let offset = 0;
+                while (offset < file.size) {
+                    const chunk = file.slice(offset, offset + chunkSize);
+                    const buffer = await chunk.arrayBuffer();
+                    controller.enqueue(new Uint8Array(buffer));
+                    offset += chunk.size;
+                }
+                controller.close();
+            }
+        });
+
+        const uploadResponse = await fetch(uploadUrl, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/octet-stream'
+            },
+            body: stream
+        });
+    }
+</script>
+
+</body>
+</html>

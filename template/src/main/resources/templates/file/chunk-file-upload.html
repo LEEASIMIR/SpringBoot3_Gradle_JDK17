@@ -74,22 +74,76 @@
     }
 
     async function startUpload() {
-        setProgress();
-
         const file = fileInput.files[0];
-        if (!file) {
-            alert('파일을 선택해주세요.');
-            return;
+
+        const chunkSize = 5 * 1024 * 1024; // 5MB 청크 크기
+
+        // 1. 세션 시작 (서버는 이 요청에 대한 응답으로 세션 URI를 반환)
+        const sessionResponse = await fetch('/start-chunk-upload', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({uploadPath: "/data", fileName: file.name, fileSize: file.size, fileType: file.type })
+        });
+
+        if (!sessionResponse.ok) {
+            throw new Error('세션 시작 실패');
         }
 
-        await fileUtil.chunkUpload('/chunk-upload', file);
+        // 서버 응답 헤더에서 세션 URI를 가져옵니다.
+        const sessionData = await sessionResponse.json();
+        const uploadUrl = sessionData.body.sessionUrl;
+
+        let currentChunk = 0;
+        let uploadedBytes = 0;
+
+        // 청크 방식----------------------
+        // 2. 각 청크를 순차적으로 업로드
+        while (true) {
+            const chunk = file.slice(uploadedBytes, uploadedBytes + chunkSize);
+
+            const chunkResponse = await fetch(uploadUrl, {
+                method: 'POST',
+                headers: {
+                    // 이 헤더는 서버에 현재 보내는 청크의 범위를 알려줍니다.
+                    'BONG-File-Range': `${uploadedBytes}/${file.size}`,
+                    'BONG-File-Type': file.type,
+                    'BONG-File-Name': file.name
+                },
+                body: chunk
+            });
+
+            if (chunkResponse.status !== 200 && chunkResponse.status !== 308) {
+                throw new Error('청크 업로드 실패');
+            }
+
+            uploadedBytes += chunk.size;
+            currentChunk++;
+
+            setProgress(uploadedBytes, file.size);
+
+            if(chunkResponse.status === 308) continue;
+
+            console.log(`${uploadedBytes}/${file.size}`);
+            if(chunkResponse.status === 200 && file.size <= uploadedBytes) {
+
+                setProgress(file.size, file.size);
+
+                const json = await chunkResponse.json();
+
+                const downloadBtnEl = document.getElementById("downloadBtn");
+                downloadBtnEl.style.display = 'block';
+                downloadBtnEl.setAttribute("data-path", `${json.body['physicsFilePath']}/${json.body['physicsFileName']}`);
+                downloadBtnEl.setAttribute("data-filename", json.body['fileName']);
+                break;
+            }
+        }
     }
 
     function setProgress(progressSuccessCnt=0, progressLastCnt=0) {
 
         if(progressSuccessCnt === -1) {
             progressBar.style.width = '100%';
-            progressBar.style.backgroundColor = '#000';
+            progressBar.style.backgroundColor = '#ff0000';
             progressBar.textContent = "오류";
             progressText.textContent = "오류";
             return;
@@ -97,10 +151,13 @@
 
         const per = Math.ceil(Math.min((progressSuccessCnt / progressLastCnt) * 1000, 1000)) / 10;
 
-        let text = `${per}%`;
+        let text;
 
-        if(per === 100) {
+        if(progressSuccessCnt === progressLastCnt) {
             text = '완료';
+        } else {
+            if(99 < per) text = `99.9%`;
+            else text = `${per}%`;
         }
 
         progressBar.style.width = `${per}%`;
