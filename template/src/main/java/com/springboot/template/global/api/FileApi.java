@@ -3,7 +3,8 @@ package com.springboot.template.global.api;
 import com.springboot.template.common.exception.MessageException;
 import com.springboot.template.common.model.ApiResponseEntity;
 import com.springboot.template.util.file.*;
-import com.springboot.template.util.file.upload.FileHelper;
+import com.springboot.template.util.file.dto.FileDownloadReqDto;
+import com.springboot.template.util.file.dto.FileTypeResDto;
 import com.springboot.template.util.file.upload.FileInfoVO;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 
 @Slf4j
@@ -48,8 +48,8 @@ public class FileApi {
             @RequestParam("file") MultipartFile chunk,
             @RequestParam("fileName") String fileName,
             @RequestParam("currentIndex") int currentIndex,
-            @RequestParam("lastIndex") int lastIndex) throws IOException, MessageException {
-        FileInfoVO result = fileUtil.chunkUpload(chunk, "/data", fileName, currentIndex, lastIndex);
+            @RequestParam("totalChunkCnt") int totalChunkCnt) throws IOException, MessageException {
+        FileInfoVO result = fileUtil.chunkUpload(chunk, "/data", fileName, currentIndex, totalChunkCnt);
 
         return ApiResponseEntity.ok(result);
     }

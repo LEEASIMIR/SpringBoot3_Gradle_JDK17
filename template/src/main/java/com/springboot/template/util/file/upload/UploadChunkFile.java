@@ -22,14 +22,14 @@ public class UploadChunkFile extends FileHelper {
     private final String chunkFileDir;
     private final String chunkFileName;
 
-    public String save(String uploadFilePath, int lastIndex) throws MessageException {
+    public String save(String uploadFilePath, int totalChunkCnt) throws MessageException {
         log.debug("save {}", uploadFilePath);
         String resultPath = "";
         File file = super.getFile(UPLOAD_BASE_DIR + uploadFilePath);
 
         int index = 0;
         try (FileOutputStream finalFos = new FileOutputStream(file)) {
-            for (int i = 0; i < lastIndex; i++) {
+            for (int i = 0; i < totalChunkCnt; i++) {
                 index = i;
 //                File chunkFile = new File(UPLOAD_BASE_DIR+chunkFileDir, chunkFileName+i);
 //

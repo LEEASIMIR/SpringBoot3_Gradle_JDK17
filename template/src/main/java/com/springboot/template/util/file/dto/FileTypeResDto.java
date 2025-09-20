@@ -1,5 +1,6 @@
-package com.springboot.template.util.file;
+package com.springboot.template.util.file.dto;
 
+import com.springboot.template.util.file.FileType;
 import lombok.Getter;
 import lombok.Setter;
 
