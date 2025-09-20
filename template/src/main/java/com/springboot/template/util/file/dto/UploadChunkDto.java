@@ -1,8 +1,5 @@
 package com.springboot.template.util.file.dto;
 
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -10,8 +7,6 @@ import org.springframework.web.multipart.MultipartFile;
  * @author 이봉용
  * @date 25. 9. 20.
  */
-@Getter
-@Setter
 public class UploadChunkDto {
     /**
      * 청크파일
@@ -33,4 +28,44 @@ public class UploadChunkDto {
      * 모든 청크 개수
      */
     private int totalChunkCnt;
+
+    public MultipartFile getChunk() {
+        return chunk;
+    }
+
+    public void setChunk(MultipartFile chunk) {
+        this.chunk = chunk;
+    }
+
+    public String getUniqueTempDirName() {
+        return uniqueTempDirName;
+    }
+
+    public void setUniqueTempDirName(String uniqueTempDirName) {
+        this.uniqueTempDirName = uniqueTempDirName;
+    }
+
+    public String getOriginFileName() {
+        return originFileName;
+    }
+
+    public void setOriginFileName(String originFileName) {
+        this.originFileName = originFileName;
+    }
+
+    public int getCurrentIndex() {
+        return currentIndex;
+    }
+
+    public void setCurrentIndex(int currentIndex) {
+        this.currentIndex = currentIndex;
+    }
+
+    public int getTotalChunkCnt() {
+        return totalChunkCnt;
+    }
+
+    public void setTotalChunkCnt(int totalChunkCnt) {
+        this.totalChunkCnt = totalChunkCnt;
+    }
 }

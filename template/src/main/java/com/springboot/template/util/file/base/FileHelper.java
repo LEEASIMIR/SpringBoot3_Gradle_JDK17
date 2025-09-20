@@ -21,16 +21,23 @@ public class FileHelper {
     }
 
     public File getFile(String savedFilePath) {
-        return new File(savedFilePath);
+        return Paths.get(savedFilePath).toFile();
     }
 
     public UploadFileInfoVO getFileInfoVO(String UPLOAD_BASE_DIR, String originFileName, String savedFilePath) {
 
-        File file = getFile(savedFilePath);
+        Path basePath = Paths.get(UPLOAD_BASE_DIR);
+        String baseLocation = basePath.toAbsolutePath().toString();
+        Path savedPath = Paths.get(savedFilePath);
+        String savedLocation = savedPath.getParent().toAbsolutePath().toString();
+
+        File file = savedPath.toFile();
 
         FileType fileType = FileType.findByExtensionAndMimeType(getExtension(file.getName()), getContentType(file));
 
-        String physicsFilePath = savedFilePath.replace(UPLOAD_BASE_DIR, "").replace("/"+file.getName(), "");
+        String physicsFilePath = savedLocation.replace(baseLocation, "");
+
+        log.info("baseLocation : {} savedLocation : {}", baseLocation, savedLocation);
 
         return new UploadFileInfoVO(originFileName, physicsFilePath, file.getName(), fileType, file.length());
     }
@@ -117,7 +124,7 @@ public class FileHelper {
         return this.getFile(dirPath, fileName);
     }
 
-    public File merge(String UPLOAD_BASE_DIR, String chunkFileDir, String chunkFileName, String uploadFilePath, int totalChunkCnt) throws MessageException {
+    public File merge(String UPLOAD_BASE_DIR, String chunkFileDir, String chunkFileName, String uploadFilePath, int totalChunkCnt) {
         log.debug("save {}", uploadFilePath);
 
         File file = this.getFile(UPLOAD_BASE_DIR + uploadFilePath);
@@ -153,8 +160,6 @@ public class FileHelper {
 
             this.deleteFolder(new File(UPLOAD_BASE_DIR + chunkFileDir));
 
-        } catch (FileNotFoundException e) {
-            throw new MessageException("exception.download.not.found", new String[]{chunkFileDir + "/" + chunkFileName + index});
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -168,7 +173,7 @@ public class FileHelper {
         try (Stream<Path> stream = Files.walk(startPath)) {
             fileCount = stream.filter(Files::isRegularFile).count();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         return fileCount;
     }

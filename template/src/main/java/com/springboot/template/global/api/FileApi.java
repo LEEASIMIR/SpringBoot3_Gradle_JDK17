@@ -9,6 +9,7 @@ import com.springboot.template.util.file.vo.UploadFileInfoVO;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,17 +21,24 @@ import java.io.IOException;
 @RestController
 public class FileApi {
 
-    private final FileUtil fileUtil;
+    @Value("${upload.file.dir}")
+    private String UPLOAD_BASE_DIR;
+    @Value("${spring.servlet.multipart.max-file-size}")
+    private String UPLOAD_MAX_SIZE;
 
     @PostMapping(value = "/file-upload", consumes = "multipart/form-data")
     public ApiResponseEntity<UploadFileInfoVO> fileUpload(@Validated @RequestPart MultipartFile file) throws Exception {
-        UploadFileInfoVO result = this.fileUtil.uploadFile("10MB", "/data", file, FileType.EXE);
+
+        FileUtil fileUtil = new FileUtil(UPLOAD_BASE_DIR, UPLOAD_MAX_SIZE);
+
+        UploadFileInfoVO result = fileUtil.uploadFile("/data", file, FileType.EXE);
         return ApiResponseEntity.ok(result);
     }
 
     @GetMapping(value = "/file-download")
     public void fileDownload(HttpServletResponse response, @RequestParam("returnFileName") String returnFileName, @RequestParam("filePath") String filePath) throws Exception {
-        this.fileUtil.download(response, returnFileName, filePath);
+        FileUtil fileUtil = new FileUtil(UPLOAD_BASE_DIR, UPLOAD_MAX_SIZE);
+        fileUtil.download(response, returnFileName, filePath);
     }
 
     @GetMapping(value = "/get-file-type")
@@ -40,8 +48,8 @@ public class FileApi {
 
     @PostMapping("/chunk-upload")
     public ApiResponseEntity<UploadFileInfoVO> handleChunkUpload(@ModelAttribute UploadChunkDto dto) throws IOException, MessageException {
+        FileUtil fileUtil = new FileUtil(UPLOAD_BASE_DIR, UPLOAD_MAX_SIZE);
         UploadFileInfoVO result = fileUtil.chunkUpload(dto, "/data");
-
         return ApiResponseEntity.ok(result);
     }
 }

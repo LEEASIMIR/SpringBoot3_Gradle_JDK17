@@ -15,9 +15,6 @@ import java.util.List;
  * @author 이봉용
  * @date 25. 9. 13.
  */
-@Slf4j
-@Getter
-@AllArgsConstructor
 public enum FileType {
 
     UNKNOWN("unknown", "unknown", Collections.emptyList()),
@@ -57,6 +54,12 @@ public enum FileType {
     private final String contentType;
     private final List<FileType> subTypes;
 
+    FileType(String extension, String contentType, List<FileType> subTypes) {
+        this.extension = extension;
+        this.contentType = contentType;
+        this.subTypes = subTypes;
+    }
+
     public static FileType findByExtensionAndMimeType(MultipartFile file) {
         return findByExtensionAndMimeType(getExtension(file.getOriginalFilename()), file.getContentType());
     }
@@ -84,5 +87,17 @@ public enum FileType {
                 .filter(type -> type.getExtension().equalsIgnoreCase(fileExtension))
                 .findFirst()
                 .orElse(FileType.UNKNOWN);
+    }
+
+    public String getExtension() {
+        return extension;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public List<FileType> getSubTypes() {
+        return subTypes;
     }
 }

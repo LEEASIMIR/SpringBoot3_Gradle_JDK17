@@ -1,42 +1,46 @@
 package com.springboot.template.util.file;
 
-import com.springboot.template.common.exception.MessageException;
 import com.springboot.template.util.file.base.FileHelper;
 import com.springboot.template.util.file.base.FileType;
 import com.springboot.template.util.file.base.FileValid;
 import com.springboot.template.util.file.dto.UploadChunkDto;
+import com.springboot.template.util.file.exception.NotAllowPathException;
+import com.springboot.template.util.file.exception.NotAllowSizeException;
+import com.springboot.template.util.file.exception.NotAllowTypeException;
 import com.springboot.template.util.file.vo.UploadFileInfoVO;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-@Slf4j
-@RequiredArgsConstructor
-@Component
 public class FileUtil {
 
-    @Value("${upload.file.dir}")
-    private String UPLOAD_BASE_DIR;
-    @Value("${spring.servlet.multipart.max-file-size}")
-    private String MAX_FILE_SIZE;
+    private final String UPLOAD_BASE_DIR;
+    private final String MAX_FILE_SIZE;
+    private final Logger log = LoggerFactory.getLogger(FileUtil.class);
     private final FileHelper fileHelper = new FileHelper();
 
-    public void download(HttpServletResponse response, String returnFileName, String filePath) throws MessageException {
+    public FileUtil(String uploadBaseDir, String maxFileSize) {
+        this.UPLOAD_BASE_DIR = uploadBaseDir;
+        this.MAX_FILE_SIZE = maxFileSize;
+    }
 
-        File file = new File(UPLOAD_BASE_DIR + filePath);
+    public void download(HttpServletResponse response, String returnFileName, String filePath) throws FileNotFoundException {
+
+        Path path = Paths.get(UPLOAD_BASE_DIR+filePath);
+        File file = path.toFile();
 
         UploadFileInfoVO fileInfoVO = fileHelper.getFileInfoVO(UPLOAD_BASE_DIR, returnFileName, file.getPath());
 
         if(!file.exists()) {
             log.error("NOT FOUND :{}", file.getPath());
-            throw new MessageException("exception.download.not.found", new String[]{fileInfoVO.fileName()});
+            throw new FileNotFoundException(file.getPath());
         }
 
         String encodedFileName = URLEncoder.encode(fileInfoVO.fileName(), StandardCharsets.UTF_8).replaceAll("\\+", "%20");
@@ -70,27 +74,25 @@ public class FileUtil {
      * @author 이봉용
      * @date 25. 9. 13.
      */
-    public UploadFileInfoVO uploadFile(String maxFileSize, String uploadPath, MultipartFile file, FileType... allowFileType) throws Exception {
+    public UploadFileInfoVO uploadFile(String uploadPath, MultipartFile file, FileType... allowFileType) throws Exception {
 
         FileType fileType = FileType.findByExtensionAndMimeType(file);
 
         //경로 취약점 체크
         if(!FileValid.isAllowPath(uploadPath)) {
-            String[] args = new String[]{uploadPath};
-            throw new MessageException("exception.upload.not.allow.path", args);
+            throw new NotAllowPathException(uploadPath);
         }
 
         //파일 타입 체크
         if(!FileValid.isAllowContentType(fileType, allowFileType)) {
-            String[] args = new String[]{fileHelper.getExtension(file.getOriginalFilename()) + "," +file.getContentType()};
-            throw new MessageException("exception.upload.not.allow.type", args);
+            throw new NotAllowTypeException(fileHelper.getExtension(file.getOriginalFilename()) + "," +file.getContentType());
         }
 
         //파일 용량 체크
-        if(!FileValid.isAllowSize(file.getSize(), maxFileSize)) {
-            String[] args = new String[]{String.valueOf(fileHelper.getSizeMB(file.getSize())), MAX_FILE_SIZE};
-            throw new MessageException("exception.upload.not.allow.size", args);
+        if(!FileValid.isAllowSize(file.getSize(), MAX_FILE_SIZE)) {
+            throw new NotAllowSizeException(fileHelper.getSizeMB(file.getSize()) + MAX_FILE_SIZE);
         }
+
         //저장
         File savedFile = fileHelper.save(file, uploadPath, fileHelper.getUUIDFileName(file.getOriginalFilename()));
 
@@ -102,10 +104,10 @@ public class FileUtil {
      * @author 이봉용
      * @date 25. 9. 14.
      */
-    public UploadFileInfoVO chunkUpload(UploadChunkDto dto, String uploadPath) throws IOException, MessageException {
+    public UploadFileInfoVO chunkUpload(UploadChunkDto dto, String uploadPath) throws IOException {
         return this.chunkUpload(dto.getChunk(), dto.getUniqueTempDirName(), uploadPath, dto.getOriginFileName(), dto.getCurrentIndex(), dto.getTotalChunkCnt());
     }
-    public UploadFileInfoVO chunkUpload(MultipartFile chunk, String tempDirName, String uploadPath, String originFileName, int currentIndex, int totalChunkCnt) throws IOException, MessageException {
+    public UploadFileInfoVO chunkUpload(MultipartFile chunk, String tempDirName, String uploadPath, String originFileName, int currentIndex, int totalChunkCnt) throws IOException {
 
         UploadFileInfoVO resultVO = null;
 
@@ -125,7 +127,7 @@ public class FileUtil {
         long fileCnt = fileHelper.getFileCnt(UPLOAD_BASE_DIR + tempPath);
         log.info("totalChunkCnt {} temp file cnt {}", totalChunkCnt, fileCnt);
         if (fileCnt == totalChunkCnt) {
-            // 모든 청크를 합쳐서 최종 파일 생성
+            //최종 파일 생성
             File mergedFile = fileHelper.merge(UPLOAD_BASE_DIR, tempPath, chunkFileName, uploadPath + "/" + fileHelper.getUUIDFileName(originFileName), totalChunkCnt);
             resultVO = fileHelper.getFileInfoVO(UPLOAD_BASE_DIR, originFileName, mergedFile.getPath());
         }
