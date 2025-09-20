@@ -27,7 +27,7 @@ public class FileValid {
 
         //파일 용량 체크
         if(!FileValid.isAllowSize(dto.getFileSize(), maxFileSize)) {
-            throw new NotAllowSizeException(dto.getFileSize() + ", " + maxFileSize);
+            throw new NotAllowSizeException(FileHelper.getSizeMB(dto.getFileSize()) + "MB, " + maxFileSize);
         }
     }
 

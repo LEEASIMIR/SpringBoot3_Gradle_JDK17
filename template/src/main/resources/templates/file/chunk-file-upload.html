@@ -104,10 +104,11 @@
             const chunkResponse = await fetch(uploadUrl, {
                 method: 'POST',
                 headers: {
-                    // 이 헤더는 서버에 현재 보내는 청크의 범위를 알려줍니다.
                     'BONG-File-Range': `${uploadedBytes}/${file.size}`,
                     'BONG-File-Type': file.type,
-                    'BONG-File-Name': file.name
+                    'BONG-File-Name': file.name,
+                    'BONG-File-Path': '/data',
+                    'BONG-Chunk-Size': chunk.size
                 },
                 body: chunk
             });
