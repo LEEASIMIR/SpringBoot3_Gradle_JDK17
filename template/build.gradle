@@ -23,9 +23,12 @@ configurations {
 repositories {
 	mavenCentral()
 }
-
+def queryDslVersion = "6.11"
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.hibernate.orm:hibernate-jpamodelgen'
+	implementation ("io.github.openfeign.querydsl:querydsl-core:${queryDslVersion}")
+	implementation ("io.github.openfeign.querydsl:querydsl-jpa:${queryDslVersion}")
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -35,15 +38,29 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-integration'
 	implementation 'org.springframework.integration:spring-integration-ip'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'com.googlecode.libphonenumber:libphonenumber:9.0.14'
+	implementation 'org.mapstruct:mapstruct:1.6.3'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13'//실제배포시에는 기능 막아야함 어떤경로든
+
+	annotationProcessor 'org.projectlombok:lombok'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+	annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen'
+	annotationProcessor ("io.github.openfeign.querydsl:querydsl-apt:${queryDslVersion}:jpa")
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'com.mysql:mysql-connector-j'
-	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+def ouputQueryDslDir = layout.buildDirectory.dir('generated/querydsl');
+tasks.withType(JavaCompile) {
+	options.getGeneratedSourceOutputDirectory().set(ouputQueryDslDir)
+}
+
+clean {
+	delete file(ouputQueryDslDir)
 }

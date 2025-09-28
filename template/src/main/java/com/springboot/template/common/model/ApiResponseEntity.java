@@ -14,36 +14,41 @@ import java.util.Objects;
 
 @Getter
 @Setter
-public class ApiResponseEntity<T> {
+public class ApiResponseEntity<T> extends ResponseEntity<T> {
 
-    private int status;
-    private String message;
-    private T body;
-
-    public static <T> ApiResponseEntity<T> ok(HttpServletResponse response, T body) {
-        ApiResponseEntity<T> entity = new ApiResponseEntity<>();
-        response.setStatus(HttpStatus.OK.value());
-        entity.setStatus(HttpStatus.OK.value());
-        entity.setMessage("SUCCESS");
-        entity.setBody(body);
-        return entity;
+    public ApiResponseEntity(HttpStatusCode status) {
+        super(status);
     }
 
-    public static <T> ApiResponseEntity<T> other(HttpServletResponse response, HttpStatus status, String message, T body) {
-        ApiResponseEntity<T> entity = new ApiResponseEntity<>();
-        response.setStatus(status.value());
-        entity.setStatus(status.value());
-        entity.setMessage(message);
-        entity.setBody(body);
-        return entity;
+    public ApiResponseEntity(T body, HttpStatusCode status) {
+        super(body, status);
     }
 
-    public static <T> ApiResponseEntity<T> error(HttpServletResponse response, String message, T body) {
-        ApiResponseEntity<T> entity = new ApiResponseEntity<>();
-        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-        entity.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-        entity.setMessage(message);
-        entity.setBody(body);
-        return entity;
+    public ApiResponseEntity(MultiValueMap<String, String> headers, HttpStatusCode status) {
+        super(headers, status);
+    }
+
+    public ApiResponseEntity(T body, MultiValueMap<String, String> headers, int rawStatus) {
+        super(body, headers, rawStatus);
+    }
+
+    public ApiResponseEntity(T body, MultiValueMap<String, String> headers, HttpStatusCode statusCode) {
+        super(body, headers, statusCode);
+    }
+
+    public static <T> ApiResponseEntity<T> ok(T body) {
+        return new ApiResponseEntity<>(body, HttpStatus.OK);
+    }
+
+    public static ApiResponseEntity<String> unauthorized(String message) {
+        return new ApiResponseEntity<>(message, HttpStatus.UNAUTHORIZED);
+    }
+
+    public static <T> ApiResponseEntity<T> other(HttpStatus status, T body) {
+        return new ApiResponseEntity<>(body, status);
+    }
+
+    public static <T> ApiResponseEntity<T> error(T body) {
+        return new ApiResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

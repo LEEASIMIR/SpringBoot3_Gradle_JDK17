@@ -12,9 +12,4 @@ public class FileController {
     public String chunkFileUpload() {
         return "/file/chunk-file-upload";
     }
-
-    @GetMapping("/chunk-stream-upload")
-    public String chunkSteamUpload() {
-        return "/file/chunk-stream-upload";
-    }
 }

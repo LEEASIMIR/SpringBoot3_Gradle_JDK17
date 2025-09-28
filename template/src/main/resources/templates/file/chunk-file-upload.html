@@ -40,26 +40,6 @@
     const progressBar = document.getElementById('progressBar');
     const progressText = document.getElementById('progressText');
 
-    const fileUtil = new FileUtil();
-    fileUtil.chunkUploadEventBus.on('chunkUpload', (event) => {
-        if(event.isSuccess && !event.isComplete) {
-            setProgress(event.currentIndex, event.totalChunkCnt);
-        }
-
-        if(!event.isSuccess && !event.isComplete) {
-            setProgress(-1, event.totalChunkCnt);
-        }
-
-        if(event.isSuccess && event.isComplete) {
-            setProgress(event.totalChunkCnt, event.totalChunkCnt);
-            const downloadBtnEl = document.getElementById("downloadBtn");
-            downloadBtnEl.style.display = 'block';
-            downloadBtnEl.setAttribute("data-path", event.result.body['fullPath']);
-            downloadBtnEl.setAttribute("data-filename", event.result.body['fileName']);
-        }
-
-    });
-
     function download(el) {
         const fileName = el.getAttribute("data-filename");
         const filePath = el.getAttribute("data-path");
@@ -76,8 +56,6 @@
     async function startUpload() {
         const file = fileInput.files[0];
 
-        const chunkSize = 5 * 1024 * 1024; // 5MB 청크 크기
-
         // 1. 세션 시작 (서버는 이 요청에 대한 응답으로 세션 URI를 반환)
         const sessionResponse = await fetch('/start-chunk-upload', {
             method: 'POST',
@@ -91,53 +69,41 @@
 
         // 서버 응답 헤더에서 세션 URI를 가져옵니다.
         const sessionData = await sessionResponse.json();
-        const uploadUrl = sessionData.body.sessionUrl;
+        const uploadUrl = sessionData.sessionUrl;
 
-        let currentChunk = 0;
-        let uploadedBytes = 0;
+        //업로드 시작
+        const chunkUploader = new ChunkUploader(uploadUrl, file, '/data', 5*1024*1024);
 
-        // 청크 방식----------------------
-        // 2. 각 청크를 순차적으로 업로드
-        while (true) {
-            const chunk = file.slice(uploadedBytes, uploadedBytes + chunkSize);
+        //업로드 이벤트
+        chunkUploader.onUploaded((event) => {
+            const res = event.res;
 
-            const chunkResponse = await fetch(uploadUrl, {
-                method: 'POST',
-                headers: {
-                    'BONG-File-Range': `${uploadedBytes}/${file.size}`,
-                    'BONG-File-Type': file.type,
-                    'BONG-File-Name': file.name,
-                    'BONG-File-Path': '/data',
-                    'BONG-Chunk-Size': chunk.size
-                },
-                body: chunk
-            });
-
-            if (chunkResponse.status !== 200 && chunkResponse.status !== 308) {
-                throw new Error('청크 업로드 실패');
+            switch (event.state) {
+                case "start": {
+                    setProgress(0, event.fileSize);
+                } break;
+                case "uploading": {
+                    setProgress(event.uploadedBytes, event.fileSize);
+                } break;
+                case "complete": {
+                    setProgress(event.fileSize, event.fileSize);
+                    const downloadBtnEl = document.getElementById("downloadBtn");
+                    downloadBtnEl.style.display = 'block';
+                    downloadBtnEl.setAttribute("data-path", `${res['physicsFilePath']}/${res['physicsFileName']}`);
+                    downloadBtnEl.setAttribute("data-filename", res['fileName']);
+                } break;
+                case "error": {
+                    setProgress(-1, event.fileSize);
+                    console.log(event);
+                } break;
+                default: {
+                    console.error('???');
+                } break;
             }
+        });
 
-            uploadedBytes += chunk.size;
-            currentChunk++;
-
-            setProgress(uploadedBytes, file.size);
-
-            if(chunkResponse.status === 308) continue;
-
-            console.log(`${uploadedBytes}/${file.size}`);
-            if(chunkResponse.status === 200 && file.size <= uploadedBytes) {
-
-                setProgress(file.size, file.size);
-
-                const json = await chunkResponse.json();
-
-                const downloadBtnEl = document.getElementById("downloadBtn");
-                downloadBtnEl.style.display = 'block';
-                downloadBtnEl.setAttribute("data-path", `${json.body['physicsFilePath']}/${json.body['physicsFileName']}`);
-                downloadBtnEl.setAttribute("data-filename", json.body['fileName']);
-                break;
-            }
-        }
+        //업로드 실행
+        await chunkUploader.upload();
     }
 
     function setProgress(progressSuccessCnt=0, progressLastCnt=0) {

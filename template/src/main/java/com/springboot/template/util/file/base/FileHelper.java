@@ -160,16 +160,37 @@ public class FileHelper {
             }
         }
 
+        this.writeStream(inputStream, temp);
+
+        return start == total;
+
+    }
+
+    public void saveChunkStream(InputStream inputStream, String tempFileName, long total) throws IOException {
+        this.temp = Paths.get(UPLOAD_BASE_DIR).resolve("temp").resolve(tempFileName);
+
+        if(!Files.exists(temp.getParent())) {
+            Files.createDirectories(temp.getParent());
+        }
+
+        log.info("temp: {}, tempFileName: {}, total: {}", temp.toAbsolutePath(), tempFileName, total);
+
+        this.writeStream(inputStream, temp);
+
+        Files.size(temp);
+
+    }
+
+    private void writeStream(InputStream inputStream, Path path) {
         try (var outputStream = Files.newOutputStream(temp, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
             byte[] buffer = new byte[8192];
             int bytesRead;
             while ((bytesRead = inputStream.read(buffer)) != -1) {
                 outputStream.write(buffer, 0, bytesRead);
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-
-        return start == total;
-
     }
 
     /**

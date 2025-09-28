@@ -1,96 +1,95 @@
-class FileUtil {
-    constructor() {
+class ChunkUploader {
+    constructor(url, file, uploadPath='', chunkSize=5 * 1024 * 1024) {
+        this.uploadUrl = url;
+        this.uploadFile = file;
+        this.uploadPath = uploadPath;
+        this.chunk = null;
+        this.uploadedBytes = 0;
+        this.chunkSize = chunkSize;
+        this.uploadedListener = {};
     }
 
-    chunkUploadEventBus = {
-        listeners: {},
+    /**
+     * @typedef {object} uploadEvent 업로드 이벤트 객체
+     * @property {'start'|'uploading'|'error'|'complete'} state 상태
+     * @property {boolean} isComplete 업로드 완료 여부
+     * @property {number} uploadedBytes 업로드 된 바이트
+     * @property {number} fileSize 총 파일 바이트
+     * @property {object} res 서버응답 객체
+     */
 
-        on(eventName, callback=(data={
-            isSuccess: false,
-            isComplete: false,
-            result: {},
-            currentIndex: 0,
-            totalChunkCnt: 0
-        }) => {}) {
-            if (!this.listeners[eventName]) {
-                this.listeners[eventName] = [];
-            }
-            this.listeners[eventName].push(callback);
-        },
-
-        emit(eventName, data={
-            isSuccess: false,
-            isComplete: false,
-            result: {},
-            currentIndex: 0,
-            totalChunkCnt: 0
-        }) {
-            if (this.listeners[eventName]) {
-                this.listeners[eventName].forEach(callback => callback(data));
-            }
-        }
+    /**
+     * @param {function(uploadEvent): void} callback
+     * @author 이봉용
+     * @date 25. 9. 21.
+     */
+    onUploaded(callback) {
+        this.uploadedListener.callback = callback;
     }
 
-    async upload(file) {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const response = await fetch('/file-upload', {method: 'POST', body: formData})
-        const json = await response.json();
-
-        if(json.status !== 200) {
-            throw new Error(json.message);
-        }
-
-        return json;
-    }
-
-    async chunkUpload(apiUrl, file) {
-
-        const chunkSize = 1024 * 1024;
-        let currentIndex = 0;
-        let totalChunkCnt = Math.ceil(file.size / chunkSize);
+    async upload() {
         let result = {};
-        try {
-            let tempDirName = new CustomDate().format('yyyyMMddHHmmssSSS');
-            for(currentIndex=0;currentIndex < totalChunkCnt;currentIndex++) {
-                const start = currentIndex * chunkSize;
-                const end = Math.min(start + chunkSize, file.size);
-                const chunk = file.slice(start, end);
+        this.uploadedBytes = 0;
 
-                const formData = new FormData();
-                formData.append('chunk', chunk);
-                formData.append('uniqueTempDirName', tempDirName);
-                formData.append('originFileName', file.name);
-                formData.append('currentIndex', currentIndex);
-                formData.append('totalChunkCnt', totalChunkCnt);
+        this.uploadedListener.callback({
+            state: 'start',
+            isComplete: false,
+            uploadedBytes: this.uploadedBytes,
+            fileSize: this.uploadFile.size,
+            res: null
+        });
 
-                const response = await fetch(apiUrl, {method: 'POST', body: formData})
-                const json = await response.json();
+        while (true) {
+            this.chunk = this.uploadFile.slice(this.uploadedBytes, this.uploadedBytes + this.chunkSize);
 
-                if(json.status !== 200) {
-                    throw new Error(json.message);
-                }
+            const response = await fetch(this.uploadUrl, {
+                method: 'POST',
+                headers: {
+                    'BONG-File-Range': `${this.uploadedBytes}/${this.uploadFile.size}`,
+                    'BONG-File-Type': this.uploadFile.type,
+                    'BONG-File-Name': this.uploadFile.name,
+                    'BONG-File-Path': this.uploadPath,
+                    'BONG-Chunk-Size': this.chunk.size
+                },
+                body: this.chunk
+            });
 
-                this.chunkUploadEventBus.emit('chunkUpload', {
-                    isSuccess: true,
-                    isComplete: currentIndex+1 >= totalChunkCnt,
-                    result: json,
-                    currentIndex: currentIndex,
-                    totalChunkCnt: totalChunkCnt
+            if (response.status !== 200 && response.status !== 308) {
+                this.uploadedListener.callback({
+                    state: 'error',
+                    isComplete: false,
+                    uploadedBytes: this.uploadedBytes,
+                    fileSize: this.uploadFile.size,
+                    res: await response.json()
                 });
+                throw new Error('청크 업로드 실패');
             }
 
-        } catch (e) {
-            console.error(e);
-            this.chunkUploadEventBus.emit('chunkUpload', {
-                isSuccess: false,
+            this.uploadedBytes += this.chunk.size;
+
+            this.uploadedListener.callback({
+                state: 'uploading',
                 isComplete: false,
-                result: e,
-                currentIndex: currentIndex,
-                totalChunkCnt: totalChunkCnt
+                uploadedBytes: this.uploadedBytes,
+                fileSize: this.uploadFile.size,
+                res: null
             });
+
+            if(response.status === 308) continue;
+
+            if(response.status === 200) {
+                result = await response.json();
+                this.uploadedListener.callback({
+                    state: 'complete',
+                    isComplete: true,
+                    uploadedBytes: this.uploadedBytes,
+                    fileSize: this.uploadFile.size,
+                    res: result
+                });
+                break;
+            }
         }
+        return result;
     }
 
 }

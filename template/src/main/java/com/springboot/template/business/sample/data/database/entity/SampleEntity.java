@@ -1,5 +1,6 @@
 package com.springboot.template.business.sample.data.database.entity;
 
+import com.springboot.template.business.sample.data.dto.SampleSaveDto;
 import com.springboot.template.common.model.data.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -21,5 +22,8 @@ public class SampleEntity extends BaseEntity {
 
     @Column(nullable = false)
     private  String name;
+
+    @Column(nullable = false)
+    private String phone;
 
 }
