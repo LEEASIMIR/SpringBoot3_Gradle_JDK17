@@ -13,9 +13,9 @@ public class ResponseDto<T> extends PageDto {
     private final boolean last;
 
     //필요한 것 만
-    public ResponseDto(long pageNumber, int pageSize, long total, List<PageSortDto> sortDto, List<T> content) {
+    public ResponseDto(long pageNumber, int pageSize, Long total, List<PageSortDto> sortDto, List<T> content) {
         this.content = content;
-        this.total = total;
+        this.total = total == null ? 0 : total;
         this.totalPages = (int) Math.ceil((double) this.total / pageSize);
         this.setPageNumber(pageNumber);
         this.setPageSize(pageSize);

@@ -2,10 +2,12 @@ package com.springboot.template.util.file.vo;
 
 
 import com.springboot.template.util.file.base.FileType;
+import lombok.Getter;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+@Getter
 public class UploadFileInfoVO {
 
     private final String fileName;
@@ -20,26 +22,6 @@ public class UploadFileInfoVO {
         this.physicsFileName = physicsFileName;
         this.fileType = fileType;
         this.sizeByte = sizeByte;
-    }
-
-    public String getPhysicsFileName() {
-        return physicsFileName;
-    }
-
-    public String getPhysicsFilePath() {
-        return physicsFilePath;
-    }
-
-    public String getFileName() {
-        return this.fileName;
-    }
-
-    public FileType getFileType() {
-        return this.fileType;
-    }
-
-    public long getSizeByte() {
-        return this.sizeByte;
     }
 
     private String getPath(String path) {

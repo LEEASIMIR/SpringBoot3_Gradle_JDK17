@@ -20,5 +20,5 @@ import org.springframework.security.web.SecurityFilterChain;
  * @date 25. 9. 14.
  */
 public interface SecurityConfig {
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception;
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception;
 }

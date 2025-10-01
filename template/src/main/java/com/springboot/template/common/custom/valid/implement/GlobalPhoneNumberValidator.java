@@ -18,7 +18,7 @@ public class GlobalPhoneNumberValidator implements ConstraintValidator<ValidGlob
         }
 
         PhoneNumberUtil phoneNumberUtil = PhoneNumberUtil.getInstance();
-        Phonenumber.PhoneNumber phoneNumber = null;
+        Phonenumber.PhoneNumber phoneNumber;
         try {
             phoneNumber = phoneNumberUtil.parse(value, getCountryCodeByCountryNumber(value.split("-")[0]));
         } catch (NumberParseException | IllegalArgumentException e) {

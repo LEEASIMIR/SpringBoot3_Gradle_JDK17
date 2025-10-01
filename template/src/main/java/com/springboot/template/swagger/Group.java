@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 public class Group {
     @Bean
     public GroupedOpenApi storeOpenApi() {
-        String paths[] = {"/api/**"};
+        String[] paths = {"/api/**"};
         return GroupedOpenApi.builder().group("api").pathsToMatch(paths)
                 .build();
     }

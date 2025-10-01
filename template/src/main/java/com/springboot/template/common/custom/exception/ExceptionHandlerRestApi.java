@@ -54,7 +54,7 @@ public class ExceptionHandlerRestApi {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ApiResponseEntity<String> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
 
-        String message = "";
+        String message;
         if (e.getMessage().contains("Duplicate entry")) {
             message = this.getMessage("exception.database.save.already.exist");
         } else if (e.getMessage().contains("cannot be null")) {
@@ -82,7 +82,7 @@ public class ExceptionHandlerRestApi {
     }
 
     private String getMessage(String key, String[] args) {
-        String message = "";
+        String message;
         try {
             message = messageSource.getMessage(key, args, LocaleContextHolder.getLocale());
         } catch (NoSuchMessageException noSuch) {

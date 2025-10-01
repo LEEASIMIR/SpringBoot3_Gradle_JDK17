@@ -75,12 +75,9 @@ public class SampleService {
         OrderSpecifier<?>[] orderSpecs = this.getOrderSpecs(dto.getSorts());
 
         //컨텐츠수
-        long total = 0;
-        Long fetchOne = jpaQueryFactory.select(qSample.count())
+        Long total = jpaQueryFactory.select(qSample.count())
             .from(qSample)
             .where(whereBuilder).fetchOne();
-
-        total = fetchOne == null ? 0 : fetchOne;
 
         //컨텐츠
         List<SampleEntity> list = jpaQueryFactory.select(qSample)

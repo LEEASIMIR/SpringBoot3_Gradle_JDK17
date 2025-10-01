@@ -1,10 +1,11 @@
 package com.springboot.template.common.querydsl.util;
 
-import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.DateTimePath;
-import com.querydsl.core.types.dsl.NumberPath;
-import com.querydsl.core.types.dsl.StringPath;
+import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.*;
+import com.springboot.template.business.member.data.database.entity.MemberEntity;
+import com.springboot.template.common.model.dto.PageSortDto;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class QueryDslUtils {
@@ -160,5 +161,19 @@ public class QueryDslUtils {
     public static <T extends Number & Comparable<T>> BooleanExpression in(NumberPath<T> target, List<T> keywords) {
         if(keywords == null || keywords.isEmpty()) return null;
         return target.in(keywords);
+    }
+
+    public static <T> OrderSpecifier<?>[] getOrderSpecs(Class<? extends T> type, String entityName, List<PageSortDto> sorts) {
+        //String 으로 Q 객체의 컬럼을 가져오고 싶을때 사용
+        PathBuilder<? extends T> entityPath = new PathBuilder<>(type, entityName);
+        List<OrderSpecifier<?>> result = new ArrayList<>();
+        for(PageSortDto dto: sorts) {
+            if (dto.getSortColumn() != null && !dto.getSortColumn().isEmpty())
+                result.add(new OrderSpecifier<>(dto.getSortDirection(), entityPath.getString(dto.getSortColumn())));
+            else
+                result.add(new OrderSpecifier<>(dto.getSortDirection(), entityPath.getString("createDate")));
+        }
+
+        return result.toArray(new OrderSpecifier<?>[0]);
     }
 }

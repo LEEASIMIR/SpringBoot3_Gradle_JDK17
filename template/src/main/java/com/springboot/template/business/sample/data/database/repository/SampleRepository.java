@@ -12,5 +12,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SampleRepository extends JpaRepository<SampleEntity, Long>, JpaSpecificationExecutor<SampleEntity> {
     @Query("select s.name, s.phone from sample s")
-    public Page<SampleEntity> findNamePhone(Specification<SampleEntity> spec, Pageable pageable);
+    Page<SampleEntity> findNamePhone(Specification<SampleEntity> spec, Pageable pageable);
 }

@@ -61,8 +61,8 @@ public class AopRestApiMonitoring {
             log.error(e.getMessage(), e);
         }
 
-        Object result = null;
-        long executionTime = 0;
+        Object result;
+        long executionTime;
         /**
          * ExceptionHandlerRestApi 에서 에러 처리
          * @see ExceptionHandlerRestApi

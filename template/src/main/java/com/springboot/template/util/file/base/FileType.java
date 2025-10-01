@@ -1,7 +1,6 @@
 package com.springboot.template.util.file.base;
 
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
+import jakarta.annotation.Nonnull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
@@ -12,6 +11,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 파일 타입 종류 정의
@@ -19,6 +19,7 @@ import java.util.List;
  * @date 25. 9. 13.
  */
 @Slf4j
+@Getter
 public enum FileType {
 
     UNKNOWN("unknown", "unknown", Collections.emptyList()),
@@ -69,11 +70,11 @@ public enum FileType {
         return FileType.values();
     }
 
-    public static FileType findByExtensionAndMimeType(MultipartFile file) {
-        return findByExtensionAndMimeType(getExtension(file.getOriginalFilename()), file.getContentType());
+    public static FileType findByExtensionAndMimeType(@Nonnull MultipartFile file) {
+        return findByExtensionAndMimeType(getExtension(Objects.requireNonNull(file.getOriginalFilename())), Objects.requireNonNull(file.getContentType()));
     }
 
-    public static String getExtension(String fileName) {
+    public static String getExtension(@Nonnull String fileName) {
         String extension = "";
         if (fileName.lastIndexOf(".") != -1) {
             extension = fileName.substring(fileName.lastIndexOf(".") + 1);
@@ -91,12 +92,12 @@ public enum FileType {
         }
     }
 
-    public static FileType findByFileNameAndMimeType(String fileName, String fileContentType) {
+    public static FileType findByFileNameAndMimeType(@Nonnull String fileName, @Nonnull String fileContentType) {
         return findByExtensionAndMimeType(getExtension(fileName), fileContentType);
     }
 
     //하드 체크, 둘다 만족
-    public static FileType findByExtensionAndMimeType(@NotNull String fileExtension, @NotNull String fileContentType) {
+    public static FileType findByExtensionAndMimeType(@Nonnull String fileExtension, @Nonnull String fileContentType) {
         return Arrays.stream(FileType.values())
                 .filter(type -> type.getExtension().equalsIgnoreCase(fileExtension) &&
                         type.getContentType().equalsIgnoreCase(fileContentType.split(";")[0]))
@@ -105,22 +106,10 @@ public enum FileType {
     }
 
     //확장자만 체크
-    public static FileType findByExtension(@NotNull String fileExtension) {
+    public static FileType findByExtension(@Nonnull String fileExtension) {
         return Arrays.stream(FileType.values())
                 .filter(type -> type.getExtension().equalsIgnoreCase(fileExtension))
                 .findFirst()
                 .orElse(FileType.UNKNOWN);
-    }
-
-    public String getExtension() {
-        return extension;
-    }
-
-    public String getContentType() {
-        return contentType;
-    }
-
-    public List<FileType> getSubTypes() {
-        return subTypes;
     }
 }

@@ -7,12 +7,4 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 @Service
 public class TestServiceImpl {
-    public String throwsError() {
-        Integer integer = 1 / 0;
-        return "hello world";
-    }
-
-    public void uploadFile(MultipartFile file) {
-
-    }
 }

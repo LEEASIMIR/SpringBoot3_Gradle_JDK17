@@ -21,11 +21,11 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 public abstract class BaseEntity {
 
-    @Column(insertable = true, updatable = false, nullable = false)
+    @Column(updatable = false, nullable = false)
     @CreatedDate
     private Instant createDate;//Instant UTC 로 저장함
 
-    @Column(insertable = true, updatable = true, nullable = false)
+    @Column(nullable = false)
     @LastModifiedDate
     private Instant updateDate;//Instant UTC 로 저장함
 }

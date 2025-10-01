@@ -78,7 +78,7 @@ public class FileApi {
                                                            @NotNull @RequestHeader("BONG-File-Type") String fileType,
                                                            @NotNull @RequestHeader("BONG-File-Path") String filePath,
                                                            @NotNull @RequestHeader("BONG-Chunk-Size") long chunkSize,
-                                                           @PathVariable String sessionId,
+                                                           @NotNull @PathVariable String sessionId,
                                                            InputStream inputStream) throws IOException {
 
         if(!request.getSession().getAttribute("uploadId").equals(sessionId)) {

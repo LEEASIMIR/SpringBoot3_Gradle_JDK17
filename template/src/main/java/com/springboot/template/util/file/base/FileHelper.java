@@ -105,7 +105,7 @@ public class FileHelper {
                 os.write(buffer, 0, bytesRead);
                 bytesReadSinceStart += bytesRead;
 
-                // 속도 제한 로직
+                // 속도 제한 로직 com.google.guava 가 있지만 일단 만들어봄
                 long elapsed_time = System.nanoTime() - start_time;
                 long expected_time = (bytesReadSinceStart * 1_000_000_000) / bytesPerSecond;
 
